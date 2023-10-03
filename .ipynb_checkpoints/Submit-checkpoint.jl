@@ -15,11 +15,22 @@ function main()::Array{Float64, 2}
     results_array = zeros(number_of_samples, 3); # initialize the results array
 
     # build and populate the bond model: this holds the nominal bond data -
+    nominal_coupon_bond_model = build(MyUSTreasuryCouponSecurityModel, (
+        par = 100, λ = 2, 
+        T = bonds_dataset[coupoun_bond_index, Symbol("Security Term")] |> String |> securityterm,
+        rate = bonds_dataset[coupoun_bond_index, Symbol("High Yield")], # this is the yield to maturity, i.e., the discount rate
+        coupon = bonds_dataset[coupoun_bond_index, Symbol("Interest Rate")], # this is the coupon rate
+    )) |> discount_model;
+
+    # nominal price -
+    nominal_price = nominal_coupon_bond_model.price;
+
+    # TODO: main loop. You need to loop over the perturbation values and compute the price of the bond, 
+    # store the percentage changes in the price in the results array.
     for (i, n) ∈ enumerate(β)
         perturbation_coupon_value = nominal_coupon_bond_model.coupon*n;
         for (j, m) ∈ enumerate(β)
-            perturbation_yield_value = nominal_coupon_bond_model.rate*m
-            
+            perturbation_yield_value = bonds_dataset[coupoun_bond_index, Symbol("High Yield")]*m
             perturbation_coupon_bond_model = build(MyUSTreasuryCouponSecurityModel, (
                 par = 100, λ = 2, 
                 T = bonds_dataset[coupoun_bond_index, Symbol("Security Term")] |> String |> securityterm,
@@ -30,10 +41,10 @@ function main()::Array{Float64, 2}
         perturbation_price = perturbation_coupon_bond_model.price;
         percentage_Δ = 100*((perturbation_price-nominal_price)/nominal_price);
         results_array[i, j] = percentage_Δ;
-    # return -
         end
-     end
-    return results_array;
+    # return -
+        return results_array;
+    end
 end
 
 # run the main method, store the results in the simulation_results_array -
